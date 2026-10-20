@@ -1,0 +1,29 @@
+# 邮箱管家配置模板
+# 用法：复制为 config.yaml 并填写真实值（config.yaml 已被 .gitignore 排除，不会提交）
+#   cp config.yaml.example config.yaml
+
+# ── 邮箱（IMAP 只读）────────────────────────────────────
+imap:
+  host: imap.qq.com
+  port: 993
+  user: "your-email@example.com"
+  # QQ 邮箱：设置 → 账户 → 开启 IMAP/SMTP 服务 → 生成授权码（不是登录密码）
+  # Gmail  ：开启两步验证 → 应用专用密码（App Password）
+  auth_code: "YOUR_AUTH_CODE"
+
+# ── 抓取参数 ────────────────────────────────────────────
+fetch:
+  hours: 24            # 每次拉过去多少小时
+  max_per_run: 50      # 单次最多处理多少封
+
+# ── LLM API（免费平台）──────────────────────────────────
+llm:
+  provider: nvidia_nim
+  # 方式 1：把 key 填这里
+  api_key: "nvapi-YOUR_NVIDIA_API_KEY"
+  # 方式 2（优先级更高）：设环境变量 NVIDIA_API_KEY
+  model: nvidia/nemotron-3.5-super-vl-120b-a12b
+
+# ── 只读声明 ────────────────────────────────────────────
+smtp:
+  enabled: false       # 本项目不使用 SMTP，不代发、不删除、不修改邮件
