@@ -10,8 +10,7 @@ $logFile = "$logDir\auto_run_$(Get-Date -Format 'yyyy-MM-dd').log"
 Add-Content -Path $logFile -Value "=== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') 自动开始 ==="
 
 Set-Location $root
-& $python -X utf8 -m tools.tool_imap 2>&1 | Tee-Object -FilePath $logFile -Append
-& $python -X utf8 classify.py 2>&1 | Tee-Object -FilePath $logFile -Append
-& $python -X utf8 report.py 2>&1 | Tee-Object -FilePath $logFile -Append
+# em 包重构后唯一入口: 抓取 + 三级降级分类 + 简报 + ICS 一次跑完
+& $python -X utf8 main.py 2>&1 | Tee-Object -FilePath $logFile -Append
 
 Add-Content -Path $logFile -Value "=== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') 自动结束 ==="

@@ -1,0 +1,3 @@
+# 邮箱管家 唯一新增依赖。
+# 其余全部 Python 标准库 (imaplib/sqlite3/http.server/email/keyring 等)。
+keyring>=24.0

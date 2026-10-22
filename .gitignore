@@ -22,3 +22,6 @@ Thumbs.db
 
 # ── 本地调试产物 ──
 test_output.log
+
+# 本地 Agent 工作区状态 (notes), 不进库
+.pi/
