@@ -73,26 +73,45 @@ def get_text(msg: email_mod.message.Message) -> str:
     return re.sub(r"\n{3,}", "\n\n", body).strip()
 
 
+def _decoded_filename(fn: Optional[str]) -> Optional[str]:
+    """把 MIME 编码的文件名 (=\?utf-8?B?...?=) 解出真实名; 纯 ASCII 名原样返回。"""
+    if not fn:
+        return None
+    parts = decode_header(fn)
+    out: list[str] = []
+    for p, enc in parts:
+        if isinstance(p, bytes):
+            out.append(p.decode(enc or "utf-8", "replace"))
+        else:
+            out.append(p)
+    return "".join(out) or None
+
+
 def extract_images(msg: email_mod.message.Message, uid: str) -> list[str]:
-    """提取图片附件存盘, 返回 base64 列表。QQ 把 JPEG 伪装成 octet-stream, 靠文件名认。"""
+    """提取图片附件存盘, 返回 base64 列表。QQ 把 JPEG 伪装成 octet-stream, 靠文件名认。
+
+    文件名可能带 MIME 编码 (=?utf-8?B?...?=, 中文附件), 先 decode_header 解出真实名再判后缀,
+    否则中文名附件的 .png 会被漏提。"""
     ATTACH_DIR.mkdir(parents=True, exist_ok=True)
     out: list[str] = []
     for part in msg.walk():
         ct = part.get_content_type()
         fn = part.get_filename()
+        # QQ 中文附件名带 base64 编码, 解出真实名再判后缀
+        fn_real = _decoded_filename(fn)
         is_img = ct.startswith("image/") or (
             ct == "application/octet-stream"
-            and re.search(r"\.(jpe?g|png|gif|bmp|webp)$", fn or "", re.I)
+            and re.search(r"\.(jpe?g|png|gif|bmp|webp)$", fn_real or "", re.I)
         )
         if not is_img:
             continue
         raw = part.get_payload(decode=True)
         if raw is None:
             continue
-        safe = re.sub(r"[^\w.\-]", "_", fn or f"img_{uid}_{len(out)}.jpg")
+        safe = re.sub(r"[^\w.\-]", "_", fn_real or f"img_{uid}_{len(out)}.jpg")
         (ATTACH_DIR / f"{uid}_{safe}").write_bytes(raw)
         out.append(base64.b64encode(raw).decode())
-        _log(f"  [附件] {fn} → {len(raw)} bytes")
+        _log(f"  [附件] {fn_real} → {len(raw)} bytes")
     return out
 
 
