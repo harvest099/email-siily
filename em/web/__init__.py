@@ -6,6 +6,6 @@
   /calendar/<day>.ics  下载某天 .ics
   /fetch               手动抓取按钮 (POST, 调 em.fetch)
 """
-from em.web.server import main
+from em.web.server import main, start_server
 
-__all__ = ["main"]
+__all__ = ["main", "start_server"]
