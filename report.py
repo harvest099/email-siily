@@ -33,7 +33,7 @@ def build_md(meta, src_file):
         return (f"# 简报 {day}\n\nLLM 输出解析失败，原始回复：\n"
                 f"```\n{result.get('raw_llm_response', '')}\n```\n")
 
-    lines = [f"# 📬 每日邮箱简报 · {day}", ""]
+    lines = [f"# 每日邮箱简报 · {day}", ""]
     if result.get("summary"):
         lines += [f"**总结**：{result['summary']}", ""]
 
@@ -52,7 +52,7 @@ def build_md(meta, src_file):
         lines.append("")
 
     if result.get("todo"):
-        lines.append("## ✅ 待办")
+        lines.append("## 待办")
         for t in result["todo"]:
             lines.append(f"- {t}")
         lines.append("")
@@ -86,9 +86,9 @@ def main():
     # 桌面：固定文件名，覆盖旧文件
     try:
         DESKTOP.mkdir(parents=True, exist_ok=True)
-        desktop_out = DESKTOP / "📬 每日简报.md"
+        desktop_out = DESKTOP / "每日简报.md"
         desktop_out.write_text(md, encoding="utf-8")
-        for old in DESKTOP.glob("📬 每日简报-*.md"):
+        for old in DESKTOP.glob("每日简报-*.md"):
             old.unlink()
         _log(f"[2] 已同步到桌面：{desktop_out.name}")
     except Exception as e:

@@ -89,7 +89,7 @@ schtasks /Create /TN DailyEmailAgent /TR "C:\\Users\\<你>\\Desktop\\personal-as
 2. **简报输出路径**
    ```yaml
    report:
-     output: "你的桌面/📬 每日简报.md"
+     output: "你的桌面/每日简报.md"
    ```
 3. **LLM key**（可选）
    ```yaml
