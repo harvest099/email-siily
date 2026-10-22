@@ -96,8 +96,8 @@ def main() -> int:
             return 1
         cfg = em_config.load()
 
-    conn = connect()
-    migrated = migrate_json_if_needed()
+    conn = connect(cfg.imap_user)
+    migrated = migrate_json_if_needed(cfg.imap_user)
     if migrated:
         _log(f"[migrate] 迁移旧 JSON {migrated} 行进 SQLite")
 

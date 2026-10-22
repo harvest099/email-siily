@@ -49,26 +49,31 @@ class Handler(BaseHTTPRequestHandler):
     # --- 路由 ---
     def do_GET(self):
         path = self.path.split("?")[0].rstrip("/") or "/"
+        conn = s.connect(self._user())
         try:
             if path == "/fetch":
-                return self._fetch()
+                return self._fetch(conn)
             if path.startswith("/mail/"):
-                return self._mail(path[6:])
+                return self._mail(conn, path[6:])
             if path.startswith("/calendar/") and path.endswith(".ics"):
-                return self._ics(path[len("/calendar/"):-4])
-            return self._list(path)
+                return self._ics(conn, path[len("/calendar/"):-4])
+            return self._list(conn, path)
         except Exception as e:
             self._send(self._page("错误", f"<h1>错误</h1><div class='body'>{_esc(str(e))}</div>"), status=500)
 
     def do_POST(self):
         path = self.path.split("?")[0].rstrip("/") or "/"
+        conn = s.connect(self._user())
         if path == "/fetch":
-            return self._fetch()
+            return self._fetch(conn)
         self._send(b"not found", "text/plain", 404)
 
+    def _user(self):
+        """本服务绑定哪个账号的库: 启动时由 start_server 设到 self.server 上。"""
+        return getattr(self.server, "em_user", "")
+
     # --- 页面 ---
-    def _list(self, path: str):
-        conn = s.connect()
+    def _list(self, conn, path: str):
         rows = s.query_date_range(conn, "0001-01-01", "9999-12-31")
         last = conn.execute("SELECT MAX(fetched_at) FROM mails").fetchone()[0] or "无"
         fr_param = self._q("from")
@@ -85,8 +90,7 @@ class Handler(BaseHTTPRequestHandler):
                              from_date=fr_param or "")
         self._send(self._page("列表", body))
 
-    def _mail(self, uid: str):
-        conn = s.connect()
+    def _mail(self, conn, uid: str):
         r = conn.execute(
             """SELECT m.uid, m.from_addr AS fr, m.subject, m.date_raw, m.body, m.image_count,
                       c.category, c.deadline, c.reason, c.needs_action
@@ -107,12 +111,11 @@ class Handler(BaseHTTPRequestHandler):
         )
         self._send(self._page(_esc(r["subject"]), body))
 
-    def _ics(self, day: str):
+    def _ics(self, conn, day: str):
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
             self._send(b"bad day", "text/plain", 400)
             return
-        conn = s.connect()
-        out = ics_export.export_day(conn, day, Path("data"))
+        out = ics_export.export_day(conn, day, s.DATA_DIR)
         data = out.read_bytes() if out.exists() else b"no events"
         self.send_response(200)
         self.send_header("Content-Type", "text/calendar; charset=utf-8")
@@ -121,9 +124,8 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def _fetch(self):
+    def _fetch(self, conn):
         """手动抓取: 调 em.fetch.fetch_recent (需要 keyring 有凭据)。"""
-        conn = s.connect()
         cfg = em_config.load()
         if not cfg.has_credentials():
             self._send(self._page("抓取", "<h1>无凭据</h1><p class='meta'>先在终端跑 <code>python main.py</code> 走首次向导, 或填 config.yaml + keyring。</p><p><a href='/'>返回列表</a></p>"))
@@ -150,7 +152,16 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def start_server(cfg, conn, host: str = "127.0.0.1", port: int = 8765):
-    import sys
+    """启动只读 Web。conn 是调用方按账号开的库 (main.py 传入); 独立跑时自建。
+
+    隔离: 服务只暴露当前账号的库; 每个使用者在自己机器跑, 127.0.0.1 一个端口即可。
+    """
+    user = cfg.imap_user if cfg and getattr(cfg, "imap_user", "") else ""
+    # 启动时: 旧数据迁到该账号库 (一次性, 幂等)
+    s.migrate_json_if_needed(user)
+    _migrate_legacy_db(user)
+    if conn is None:
+        conn = s.connect(user)
     for p in (port, port + 1, port + 2, port + 3):
         try:
             srv = ThreadingHTTPServer((host, p), Handler)
@@ -159,16 +170,34 @@ def start_server(cfg, conn, host: str = "127.0.0.1", port: int = 8765):
             continue
     else:
         raise RuntimeError(f"端口 {port}-{port+3} 全被占用")
-    s.migrate_json_if_needed()
-    print(f"邮箱管家 Web (只读): http://{host}:{p}  (Ctrl+C 退出)")
+    srv.em_user = user          # Handler 经 self.server.em_user 读账号
+    print(f"邮箱管家 Web (只读, 账号 {user or 'default'}): http://{host}:{p}  (Ctrl+C 退出)")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
 
 
+def _migrate_legacy_db(user: str):
+    """旧单库 em.db → 账号库 em_<前缀>.db 一次性迁移 (uid 去重, 幂等)。
+
+    只在账号库还没有邮件时才拷入; 已有数据则不动, 不会覆盖。
+    """
+    import sqlite3
+    legacy = s.DEFAULT_DB
+    if not legacy.exists() or not user:
+        return
+    target = s.db_path_for(user)
+    n = s.connect(user).execute("SELECT COUNT(*) FROM mails").fetchone()[0]
+    if n > 0:
+        return  # 账号库已有数据, 不覆盖
+    src, dst = sqlite3.connect(str(legacy)), sqlite3.connect(str(target))
+    src.backup(dst)
+    src.close(); dst.close()
+    print(f"[migrate] 旧 em.db → {target.name} (账号 {user.split('@')[0]})")
+
+
 def main():
-    s.migrate_json_if_needed()
     start_server(None, None)
 
 

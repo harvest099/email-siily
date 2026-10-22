@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from em.storage.sqlite_store import DB_PATH
+from em.storage import DATA_DIR
 
 _CAT_ORDER = ["需要我处理", "重要通知", "资讯速览"]
 
@@ -19,7 +19,7 @@ def build_markdown(conn, day: str, cfg) -> str:
     from em.storage.sqlite_store import query_date_range
 
     rows = query_date_range(conn, day, day)
-    out_dir = Path(DB_PATH.parent)
+    out_dir = DATA_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     md_path = out_dir / f"daily_report_{day}.md"
 

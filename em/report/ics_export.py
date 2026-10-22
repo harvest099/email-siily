@@ -10,8 +10,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from em.storage.sqlite_store import DB_PATH
-
 
 def _parse_dt(v: Optional[str]) -> Optional[datetime]:
     """把 deadline 字符串解析成 naive datetime。支持 ISO / YYYY-MM-DD[ HH:MM]。"""

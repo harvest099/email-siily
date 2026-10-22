@@ -13,7 +13,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "em.db"
+ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = ROOT / "data"
+DEFAULT_DB = DATA_DIR / "em.db"          # 无配置时的兵库 (向导跑完后才真正拆分)
+
+
+def db_path_for(user: str = "") -> Path:
+    """按邮箱账号前缀分库: a@b.com → data/em_a.db; 空 user → 默认 em.db。
+
+    隔离原则: 每个使用者只跑自己机器的 main.py, 只读/写自己账号的库,
+    127.0.0.1 一个端口天然隔离, 无需登录层。
+    """
+    user = (user or "").split("@")[0].strip() or "_default"
+    safe = "".join(c for c in user if c.isalnum() or c in "._-")[:32] or "_default"
+    return DATA_DIR / f"em_{safe}.db"
 
 
 def _ensure_schema(conn: sqlite3.Connection) -> None:
@@ -44,10 +57,11 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+def connect(user: str = "") -> sqlite3.Connection:
+    path = db_path_for(user)
+    path.parent.mkdir(parents=True, exist_ok=True)
     # check_same_thread=False: 允许 Web 服务多线程复用同一连接 (本机只读, 单进程, 安全)
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn = sqlite3.connect(str(path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     _ensure_schema(conn)
     return conn
@@ -151,12 +165,15 @@ def latest_unclassified(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return out
 
 
-def migrate_json_if_needed() -> int:
-    """一次性迁移旧 data/*.json（非 classified_ 前缀）进 SQLite。返回迁移行数。"""
-    data_dir = DB_PATH.parent
+def migrate_json_if_needed(user: str = "") -> int:
+    """一次性迁移旧 data/*.json（非 classified_ 前缀）进该账号的库。返回迁移行数。
+
+    旧 JSON 只有一批 (单机单账号时代), 全部迁到指定 user 的库; 空 user → 默认库。
+    """
+    data_dir = DATA_DIR
     if not data_dir.exists():
         return 0
-    conn = connect()
+    conn = connect(user)
     count = 0
     for f in sorted(data_dir.glob("*.json")):
         if f.name.startswith("classified_"):
