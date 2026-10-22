@@ -9,7 +9,7 @@
 | 3 | 决策脚本 | 完成 | `classify.py`（LLM 分类，NVIDIA NIM 免费额度） |
 | 4 | 简报生成 | 完成 | `report.py`（桌面单文件覆盖） |
 | 5 | 计划任务 | 完成 | `task_daily.ps1` + Windows `DailyEmailAgent`（09:00） |
-| 6 | 运行验证 | 完成 | `data/` 含 10-19、10-20 两批实录，`daily_report.md` 为当前输出 |
+| 6 | 运行验证 | 完成 | `data/` 含 10-20、10-22 实录，桌面 `每日简报.md` 为当前输出 |
 
 ## 目录
 
@@ -30,8 +30,8 @@ personal-assistant/
 
 1. **抓取**：`tool_imap.py` 拉取 QQ 邮箱过去 24h 邮件，去重，输出 `data/YYYY-MM-DD.json`，图片附件存 `data/attachments/`
 2. **决策**：`classify.py` 对每封邮件调用 LLM，输出 `data/classified_*.json`，每条含类别 + 原文依据
-3. **简报**：`report.py` 汇总生成桌面 `daily_report.md`
-4. **调度**：Windows 计划任务 `DailyEmailAgent` 每日 09:00 触发，已手动验证跑通
+3. **简报**：`report.py` 汇总生成桌面 `每日简报.md`
+4. **调度**：Windows 计划任务 `DailyEmailAgent` 每日 09:00 触发，已手动验证跑通（10-22 数据已生成）
 
 ## 可选扩展
 

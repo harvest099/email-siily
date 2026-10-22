@@ -70,13 +70,11 @@ API key 解析顺序：命令行参数 `--api-key` > 环境变量 `NVIDIA_API_KE
 
 ## 安装计划任务
 
-Windows 计划任务 `DailyEmailAgent`，每天 09:00 自动跑（抓邮件→分类→简报）。已提供 `_daily_run.cmd` 入口，避免路径转义问题：
+Windows 计划任务 `DailyEmailAgent`，每天 09:00 自动跑（抓邮件→分类→简报）。`_daily_run.cmd` 是计划任务指向的中间层，`task_daily.ps1` 里把 python 路径改成你自己的安装位置（默认 `E:\Anaconda\python.exe`）：
 
 ```powershell
 schtasks /Create /TN DailyEmailAgent /TR "C:\\Users\\<你>\\Desktop\\personal-assistant\\_daily_run.cmd" /SC DAILY /ST 09:00 /F
 ```
-
-> 实际部署用 `task_daily.ps1`（PowerShell 调 python 绝对路径 `E:\Anaconda\python.exe`），`_daily_run.cmd` 是计划任务指向的中间层。`task_daily.ps1` 里把 python 路径改成你自己的 Python 安装位置。
 
 ## 换账号使用（其他人如何用）
 
@@ -121,11 +119,10 @@ schtasks /Create /TN DailyEmailAgent /TR "C:\\Users\\<你>\\Desktop\\personal-as
 ## 已知边界与解决方案
 
 - LLM 视觉分类依赖代理，无代理时自动降级为纯文本模式
-- **计划任务 09:00 若 Clash 代理未开**：IMAP 抓取照常，classify 失败 → 简报用上一天数据；`task_daily.ps1` 日志会记录 LLM 失败，可手动补跑 `python classify.py && python report.py` 补当天
+- 计划任务 09:00 若 Clash 代理未开：IMAP 抓取照常，classify 失败，简报退到上一天数据；日志会记录 LLM 失败，可手动补跑 `python classify.py && python report.py`
 - 只处理开启转发后的新邮件，历史邮件不迁移
 - 不能用主邮箱地址回信，需回原邮箱
 - 不追踪 24 小时前的待办
-- LLM 视觉分类依赖代理，无代理时自动降级为纯文本模式
 
 ## License
 
