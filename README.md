@@ -70,11 +70,41 @@ API key 解析顺序：命令行参数 `--api-key` > 环境变量 `NVIDIA_API_KE
 
 ## 安装计划任务
 
+Windows 计划任务 `DailyEmailAgent`，每天 09:00 自动跑（抓邮件→分类→简报）。已提供 `_daily_run.cmd` 入口，避免路径转义问题：
+
 ```powershell
-schtasks /Create /TN DailyEmailAgent ^
-  /TR "powershell -NoProfile -ExecutionPolicy Bypass -File C:\路径\personal-assistant\task_daily.ps1" ^
-  /SC DAILY /ST 09:00 /F
+schtasks /Create /TN DailyEmailAgent /TR "C:\\Users\\<你>\\Desktop\\personal-assistant\\_daily_run.cmd" /SC DAILY /ST 09:00 /F
 ```
+
+> 实际部署用 `task_daily.ps1`（PowerShell 调 python 绝对路径 `E:\Anaconda\python.exe`），`_daily_run.cmd` 是计划任务指向的中间层。`task_daily.ps1` 里把 python 路径改成你自己的 Python 安装位置。
+
+## 换账号使用（其他人如何用）
+
+**代码通用，只改 `config.yaml` 里 3 处个人数据，零代码改动**：
+
+1. **邮箱 + 授权码**
+   ```yaml
+   imap:
+     email: "你的qq邮箱@qq.com"   # 改成自己的邮箱
+     password: "QQ邮箱IMAP授权码"  # QQ邮箱 设置→账户 开IMAP生成, 非登录密码
+   ```
+2. **简报输出路径**
+   ```yaml
+   report:
+     output: "你的桌面/📬 每日简报.md"
+   ```
+3. **LLM key**（可选）
+   ```yaml
+   llm:
+     key: ""            # 留空让脚本自动从 ~/.pi/agent/models.json 找
+     model: ""         # 留空用默认 nvidia/nemotron-3.5-super-vl-120b-a12b
+   ```
+
+其他账号还需：装 Python + `pip install requests pyyaml`、重建设划任务（改脚本路径）、LLM 那步连 NVIDIA 代理。
+
+**自动抓取要求**：电脑开机 + 网络通（连 `imap.qq.com`）+ IMAP 授权码有效。抓邮件**不需代理、不需开终端**；仅 LLM 分类那步需 Clash 代理（代理没开则简报退到上一天数据）。
+
+## 安装计划任务（原方法）
 
 ## 安全设计
 
@@ -88,8 +118,10 @@ schtasks /Create /TN DailyEmailAgent ^
 | 可审计 | `logs/daily.log` 记录运行细节 |
 | 可撤销 | 删除 `config.yaml` + 撤销授权码 + 删计划任务，即完全停止 |
 
-## 已知边界
+## 已知边界与解决方案
 
+- LLM 视觉分类依赖代理，无代理时自动降级为纯文本模式
+- **计划任务 09:00 若 Clash 代理未开**：IMAP 抓取照常，classify 失败 → 简报用上一天数据；`task_daily.ps1` 日志会记录 LLM 失败，可手动补跑 `python classify.py && python report.py` 补当天
 - 只处理开启转发后的新邮件，历史邮件不迁移
 - 不能用主邮箱地址回信，需回原邮箱
 - 不追踪 24 小时前的待办

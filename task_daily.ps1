@@ -1,25 +1,17 @@
+# 每日 09:00 自动跑邮箱管家：抓邮件 -> LLM 分类 -> 生成桌面简报
+# 计划任务（Windows Task Scheduler）每天 09:00 调用本脚本
 $ErrorActionPreference = "Continue"
 $root = "C:\Users\86150\Desktop\personal-assistant"
-$py   = "E:\Anaconda\python.exe"
-$log  = Join-Path $root "logs\daily.log"
-New-Item -ItemType Directory -Force (Join-Path $root "logs") | Out-Null
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+$python = "E:\Anaconda\python.exe"          # 绝对路径: 计划任务环境 PATH 不一定有 python
+$logDir = "$root\logs"
+if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
+$logFile = "$logDir\auto_run_$(Get-Date -Format 'yyyy-MM-dd').log"
 
-function RunStep {
-    param([string]$Name, [string]$Script, [string]$Arg)
-    if ($Arg) {
-        $step = & $py -X utf8 (Join-Path $root $Script) $Arg 2>&1
-    } else {
-        $step = & $py -X utf8 (Join-Path $root $Script) 2>&1
-    }
-    $txt = ($step | Out-String) -replace "`n", "`r`n"
-    Add-Content -Path $log -Value "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $Name" -Encoding UTF8
-    Add-Content -Path $log -Value $txt -Encoding UTF8
-}
+Add-Content -Path $logFile -Value "=== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') 自动开始 ==="
 
-Add-Content -Path $log -Value "==== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') START ====" -Encoding UTF8
-RunStep -Name "FETCH"    -Script "tools\tool_imap.py" -Arg "24"
-RunStep -Name "CLASSIFY" -Script "classify.py"
-RunStep -Name "REPORT"   -Script "report.py"
-Add-Content -Path $log -Value "==== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') END ====" -Encoding UTF8
+Set-Location $root
+& $python -X utf8 -m tools.tool_imap 2>&1 | Tee-Object -FilePath $logFile -Append
+& $python -X utf8 classify.py 2>&1 | Tee-Object -FilePath $logFile -Append
+& $python -X utf8 report.py 2>&1 | Tee-Object -FilePath $logFile -Append
+
+Add-Content -Path $logFile -Value "=== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') 自动结束 ==="
