@@ -1,6 +1,5 @@
 # 每日 09:00 自动跑邮箱管家：抓邮件 -> LLM 分类 -> 生成桌面简报
 # 计划任务（Windows Task Scheduler）每天 09:00 调用本脚本
-# 使用者注意: 下面两个路径改成你自己的 (项目目录 / python 绝对路径), 或用 main.py --wizard 重新生成
 $ErrorActionPreference = "Continue"
 $root = $PSScriptRoot                                  # ← 自动定位项目目录 (脚本所在处), 无需手改
 $python = "E:\Anaconda\python.exe"                      # ← 你的 python.exe 绝对路径 (需 3.9+; 计划任务环境 PATH 里常没有 python)

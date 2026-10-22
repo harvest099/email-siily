@@ -6,26 +6,26 @@
 
 ## 快速开始
 
-> 下面命令里的 `E:\\Anaconda\\python.exe` 是示例路径，**换成你自己的 python.exe 绝对路径**（需 3.9+；用 `where python` 找；若系统默认 python 太旧或控制台报 `UnicodeEncodeError`，`-X utf8` 可强制 UTF-8）。`task_daily.ps1` 里的 `$python` 同理。
+> 下面命令里的 `python` 替换成你自己的 python（需 3.9+；用 `where python` 找，或 `py -0` 看装了哪个版本）。Windows 控制台是 GBK，直接跑含中文/emoji 报 `UnicodeEncodeError` 就加 `-X utf8`。
 
 ```powershell
 # 1. 装唯一依赖 (其余全标准库)
 pip install -r requirements.txt
 
 # 2. 首次运行 → 自动向导 (填邮箱/授权码, 选 LLM 开关)
-<python> -X utf8 main.py
+python -X utf8 main.py
 
 # 3. 之后任意一次: 抓取 + 分类 + 简报 + ICS
-<python> -X utf8 main.py
+python -X utf8 main.py
 ```
 
 ### 子命令
 
 ```powershell
-<python> -X utf8 main.py                 # 抓 24h + 分类 + 当天简报+ICS
-<python> -X utf8 main.py --fetch 48      # 抓过去 48h
-<python> -X utf8 main.py --range 2026-10-20 2026-10-22  # 按日期生成简报+ICS
-<python> -X utf8 main.py --web           # 本机只读 Web (127.0.0.1:8765)
+python -X utf8 main.py                 # 抓 24h + 分类 + 当天简报+ICS
+python -X utf8 main.py --fetch 48      # 抓过去 48h
+python -X utf8 main.py --range 2026-10-20 2026-10-22  # 按日期生成简报+ICS
+python -X utf8 main.py --web           # 本机只读 Web (127.0.0.1:8765)
 ```
 
 Web 界面：`http://127.0.0.1:8765`（仅本机可访问）。`/` 邮件列表（分类着色）、`/mail/<uid>` 单封、`/calendar/<day>.ics` 下载、`/fetch` 手动抓取按钮。**只读**——无删除/代发接口。
@@ -88,10 +88,10 @@ personal-assistant/
 
 ```powershell
 # 语法自检 (全 em 包 + main.py)
-<python> -X utf8 -c "import ast,pathlib;[ast.parse(f.read_text(encoding='utf-8')) for f in list(pathlib.Path('em').rglob('*.py'))+[pathlib.Path('main.py')]]"
+python -X utf8 -c "import ast,pathlib;[ast.parse(f.read_text(encoding='utf-8')) for f in list(pathlib.Path('em').rglob('*.py'))+[pathlib.Path('main.py')]]"
 
 # 失败路径: LLM 全关走正则不崩
-<python> -X utf8 -c "from em import config;from em.llm import classify;cfg=config.Config();cfg.llm_enabled=False;r,b=classify(cfg,[{'uid':'1','subject':'账单续费到期','body':'请缴费'}]);print(b,r['categories'].keys())"
+python -X utf8 -c "from em import config;from em.llm import classify;cfg=config.Config();cfg.llm_enabled=False;r,b=classify(cfg,[{'uid':'1','subject':'账单续费到期','body':'请缴费'}]);print(b,r['categories'].keys())"
 ```
 
 ## 已验证（截至 v0.2）
