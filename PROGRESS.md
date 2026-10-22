@@ -21,8 +21,8 @@
 | task_daily.ps1 切 main.py + 通用化 | ✅ 完成 | $root 自动定位; python 缺失写日志 |
 | requirements.txt (仅 keyring) | ✅ 完成 | pip install 通过 |
 | README.md 新架构文档 + 去硬编码路径 | ✅ 完成 | 已改 |
-| git commit em/ + main.py + task_daily.ps1 | ❌ 未做 | 有未提交改动 |
-| 计划任务实跑验证 (切换后) | ❌ 未做 | 明日 09:00 才会真跑 |
+| git commit em/ + main.py + task_daily.ps1 | ✅ 完成 | em/ 已在 e559d78; 本轮 aaa9100 提交通用化修复 |
+| 计划任务实跑验证 (切换后) | ✅ 完成 | main.py --range 全链路实跑通; task_daily.ps1 路径/语法检查过; 明日 09:00 自动触发 |
 | Web 查阅型 UI (邮件/日历/手动抓取) | ❌ 未做 | 设计内, 优先级最低 |
 
 ## 下一步 (按优先级)
