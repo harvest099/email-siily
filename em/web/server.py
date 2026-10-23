@@ -151,10 +151,10 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def start_server(cfg, conn, host: str = "127.0.0.1", port: int = 8765):
-    """启动只读 Web。conn 是调用方按账号开的库 (main.py 传入); 独立跑时自建。
+def start_server(cfg, conn, host: str = "0.0.0.0", port: int = 8765):
+    """启动 Web。conn 是调用方按账号开的库 (main.py 传入); 独立跑时自建。
 
-    隔离: 服务只暴露当前账号的库; 每个使用者在自己机器跑, 127.0.0.1 一个端口即可。
+    隔离: 服务只暴露当前账号的库; 绑 0.0.0.0 手机也能访问 (同一局域网)。
     """
     user = cfg.imap_user if cfg and getattr(cfg, "imap_user", "") else ""
     # 启动时: 旧数据迁到该账号库 (一次性, 幂等)
